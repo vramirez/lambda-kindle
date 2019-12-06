@@ -14,7 +14,16 @@ import  boto3
 from time import sleep
 from random import randint
 
-def randomHeader():
+def getBookId(url):
+    vec=iter(str.split(url,"/"))
+    for pos in vec:
+        if pos == "dp" :
+            return next(vec)
+        if pos =="product":
+            return str.split(next(vec),"?")[0]
+    return None
+        
+def parse(url):
     vec=[]
     vec.append('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36' )
     vec.append('Mozilla/5.0 (Macintosh; Intel Mac OS X x.y; rv:42.0) Gecko/20100101 Firefox/42.0')
@@ -23,22 +32,13 @@ def randomHeader():
     vec.append('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snap Chromium/77.0.3865.90 Chrome/77.0.3865.90 Safari/537.36')
     vec.append('Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:71.0) Gecko/20100101 Firefox/71.0')
     vec.append('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snap Chromium/78.0.3904.108 Chrome/78.0.3904.108 Safari/537.36')
-    return vec[randint(0,len(vec)-1)]
-
-def getBookId(url):
-    vec=iter(str.split(url,"/"))
-    for pos in vec:
-        if pos == "dp" or pos=="product":
-            return next(vec)
-    return None
-        
-def parse(url):
-    headers = {
-        'User-Agent': randomHeader()
-    }
+    
     try:
         # Retrying for failed requests
-        for i in range(20):
+        for i in range(50):
+            headers = {
+                'User-Agent': vec[randint(0,len(vec)-1)]
+            }
             # Generating random delays
             sleep(randint(1,5))
             # Adding verify=False to avold ssl related issues
@@ -93,5 +93,11 @@ def writeItem(item):
     dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
     table = dynamodb.Table('ebooks')
     response = table.put_item(Item=item)
+    return response
 
+def deleteEbook(ebookid,userid):
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    table = dynamodb.Table('ebooks')
+    response = table.delete_item(Key={'ebookid':ebookid,'userid':userid})
+    return response
 #def get    
